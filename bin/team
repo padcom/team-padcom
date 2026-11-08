@@ -1,0 +1,177 @@
+#!/usr/bin/env node
+import { execFileSync, spawn, spawnSync } from 'node:child_process'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import readline from 'node:readline'
+import { fileURLToPath } from 'node:url'
+import {
+  bootMessage, buildClaudeArgs, channelFailed, channelPluginDirs, channelPluginSettings, formatEvent, hasPriorSession, loadConfig, renderUnit, roleConfig,
+  roleDir, servicePath,
+} from '../lib/team.mjs'
+
+const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
+const config = loadConfig(root)
+const service = config.serviceName
+const roles = Object.keys(config.roles)
+const channelDir = path.join(os.homedir(), '.claude', 'channels', 'discord')
+const leadRole = roles.find((role) => config.roles[role].channel)
+
+const instance = (role) => `${service}@${role}.service`
+const systemctl = (...args) => spawnSync('systemctl', ['--user', ...args], { stdio: 'inherit' }).status ?? 1
+const targets = (role) => (role ? [instance((roleConfig(config, role), role))] : roles.map(instance))
+
+const CHANNEL_RETRY_MS = 16 * 60 * 1000
+
+function run(role) {
+  const definition = roleConfig(config, role)
+  const cwd = roleDir(root, role)
+  const resume = hasPriorSession(cwd, os.homedir())
+  // A first-run dependency install can outlast the plugin's startup window.
+  if (definition.channel) {
+    for (const dir of channelPluginDirs(config.channel, os.homedir())) {
+      spawnSync('bun', ['install', '--no-summary'], { cwd: dir, stdio: 'inherit' })
+    }
+  }
+  const child = spawn('claude', buildClaudeArgs(role, root, config, { resume }), {
+    cwd,
+    // Channel messages cannot be delivered over MCP protocol revision 2026-07-28.
+    env: {
+      ...process.env,
+      PATH: `${path.join(root, 'bin')}:${process.env.PATH}`,
+      TEAM_ROLE: role,
+      ...(definition.channel && { MCP_PROTOCOL_NEGOTIATION: 'legacy' }),
+    },
+    // stdin stays open and silent: it keeps -p alive, and work arrives through messages.
+    stdio: ['pipe', 'pipe', 'inherit'],
+  })
+  readline.createInterface({ input: child.stdout }).on('line', (line) => {
+    try {
+      const event = JSON.parse(line)
+      if (definition.channel && channelFailed(event, config.channel)) {
+        // A session never retries a failed plugin server, so restart once its failure cooldown has passed.
+        console.error(`Channel failed to connect; restarting in ${CHANNEL_RETRY_MS / 60000} minutes.`)
+        setTimeout(() => child.kill('SIGTERM'), CHANNEL_RETRY_MS)
+      }
+      const text = formatEvent(event)
+      if (text) console.log(text)
+    } catch {
+      console.log(line)
+    }
+  })
+  // Headless sessions start plugins on their first turn, and the channel is a plugin.
+  if (definition.channel) child.stdin.write(`${bootMessage()}\n`)
+  for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => child.kill(signal))
+  child.on('exit', (code) => process.exit(code ?? 1))
+}
+
+function install() {
+  const dir = path.join(os.homedir(), '.config', 'systemd', 'user')
+  fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(path.join(dir, `${service}@.service`), renderUnit({
+    root,
+    node: process.execPath,
+    pathEnv: servicePath(process.env.PATH, path.dirname(process.execPath)),
+    sshAuthSock: process.env.SSH_AUTH_SOCK,
+  }))
+  systemctl('daemon-reload')
+  systemctl('enable', ...targets())
+  console.log(`Installed. Enabled: ${roles.join(', ')}. Use "team start" to launch them.`)
+}
+
+function ask(question, { hidden = false } = {}) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true })
+  if (hidden) {
+    const write = rl._writeToOutput.bind(rl)
+    rl._writeToOutput = (text) => { if (text.includes(question)) write(text) }
+  }
+  return new Promise((resolve) => rl.question(question, (answer) => {
+    rl.close()
+    if (hidden) console.log()
+    resolve(answer.trim())
+  }))
+}
+
+// Written directly so the bot token never passes through a Claude conversation.
+async function setToken() {
+  const file = path.join(channelDir, '.env')
+  if (fs.existsSync(file) && (await ask(`${file} already exists. Replace it? [y/N] `)).toLowerCase() !== 'y') return
+  const token = await ask('Discord bot token (input hidden): ', { hidden: true })
+  if (!token) throw new Error('No token entered; nothing was changed.')
+  fs.mkdirSync(channelDir, { recursive: true, mode: 0o700 })
+  fs.writeFileSync(file, `DISCORD_BOT_TOKEN=${token}\n`, { mode: 0o600 })
+  fs.chmodSync(file, 0o600)
+  console.log(`Saved to ${file}`)
+}
+
+function pair() {
+  systemctl('stop', instance(leadRole))
+  console.log('In this session: DM the bot, then run /discord:access pair <code>')
+  console.log('Then run /discord:access policy allowlist, exit, and use "team start".')
+  const settings = JSON.stringify(channelPluginSettings(config.channel))
+  spawnSync('claude', ['--settings', settings, '--channels', config.channel], { cwd: roleDir(root, leadRole), stdio: 'inherit' })
+}
+
+function addProject(url, givenName) {
+  if (!url) throw new Error('Usage: team add-project <git-url> [name]')
+  const name = givenName ?? path.basename(url).replace(/\.git$/, '')
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(name)) throw new Error(`Invalid project name "${name}"`)
+  if (config.projects.some((project) => project.name === name)) throw new Error(`Project "${name}" already exists`)
+  execFileSync('git', ['clone', '--', url, path.join(root, 'repos', name)], { stdio: 'inherit' })
+  config.projects.push({ name, url })
+  fs.writeFileSync(path.join(root, 'team.json'), `${JSON.stringify(config, null, 2)}\n`)
+  fs.appendFileSync(path.join(root, 'shared', 'projects.md'), `\n## ${name}\n\n- Clone: repos/${name}\n- Remote: ${url}\n- Relationships: (not documented yet)\n`)
+  console.log(`Added ${name}. Tell the lead on Discord that it is available.`)
+}
+
+function check() {
+  const pluginList = spawnSync('claude', ['plugin', 'list'], { encoding: 'utf8' }).stdout ?? ''
+  const auth = spawnSync('claude', ['auth', 'status'], { encoding: 'utf8' }).stdout ?? ''
+  const access = path.join(channelDir, 'access.json')
+  const results = {
+    'Bun on PATH': spawnSync('bun', ['--version']).status === 0,
+    'Discord plugin installed': pluginList.includes('discord@claude-plugins-official'),
+    'Claude logged in': auth.includes('"loggedIn": true'),
+    'Bot token saved': fs.existsSync(path.join(channelDir, '.env')),
+    'Discord allowlist policy': fs.existsSync(access) && JSON.parse(fs.readFileSync(access, 'utf8')).dmPolicy === 'allowlist',
+    'At least one project': config.projects.length > 0,
+  }
+  for (const [label, ok] of Object.entries(results)) console.log(`${ok ? 'ok     ' : 'MISSING'} ${label}`)
+}
+
+const usage = `Usage: team <command>
+  check                        Show what setup is still missing
+  set-token                    Save the Discord bot token
+  pair                         Open an interactive lead session to pair your Discord account
+  add-project <git-url> [name] Clone a project for the team
+  install                      Install and enable the systemd user services
+  start|stop|restart [role]    Control all agents, or one
+  status                       Show agent services
+  logs <role>                  Follow one agent's activity
+  run <role>                   Run an agent in the foreground (used by systemd)`
+
+const [command, ...args] = process.argv.slice(2)
+const commands = {
+  run: () => run(args[0]),
+  install,
+  'set-token': setToken,
+  pair,
+  'add-project': () => addProject(args[0], args[1]),
+  check,
+  start: () => systemctl('start', ...targets(args[0])),
+  stop: () => systemctl('stop', ...targets(args[0])),
+  restart: () => systemctl('restart', ...targets(args[0])),
+  status: () => systemctl('list-units', `${service}@*`, '--all', '--no-pager'),
+  logs: () => spawnSync('journalctl', ['--user', '-u', instance(args[0]), '-n', '50', '-f', '-o', 'cat'], { stdio: 'inherit' }),
+}
+
+if (!commands[command]) {
+  console.log(usage)
+  process.exit(command ? 1 : 0)
+}
+try {
+  await commands[command]()
+} catch (error) {
+  console.error(error.message)
+  process.exit(1)
+}

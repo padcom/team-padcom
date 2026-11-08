@@ -1,0 +1,181 @@
+{
+  "serviceName": "padcom-team",
+  "channel": "plugin:discord@claude-plugins-official",
+  "roles": {
+    "lead": {
+      "model": "sonnet",
+      "channel": true,
+      "capabilities": [
+        "editShared",
+        "merge"
+      ]
+    },
+    "architect": {
+      "model": "sonnet",
+      "capabilities": [
+        "editShared"
+      ]
+    },
+    "developer": {
+      "model": "sonnet",
+      "capabilities": [
+        "worktree",
+        "commit",
+        "push",
+        "tests"
+      ],
+      "allow": [
+        "Bash(git clone /home/padcom/projects/padcom-team/repos/* /home/padcom/projects/padcom-team/workspaces/developer/*)",
+        "Bash(git clone --depth 1 * https://github.com/ArduPilot/ardupilot.git /home/padcom/projects/padcom-team/shared/tools/*)",
+        "Bash(bash .github/*)",
+        "Bash(/home/padcom/projects/padcom-team/shared/tools/venv-ardupilot/bin/python *)",
+        "Bash(/home/padcom/projects/padcom-team/shared/tools/venv-ardupilot/bin/pip *)",
+
+        "Bash(git fetch *)",
+        "Bash(git checkout *)",
+        "Bash(git submodule *)",
+        "Bash(gh pr create*)",
+        "Bash(gh run view*)",
+        "Bash(gh run list*)",
+        "Bash(gh run watch*)",
+        "Bash(gh workflow view*)",
+        "Bash(gh workflow list*)",
+        "Bash(git ls-remote*)",
+        "Bash(mkdir *)",
+        "Bash(python3 *)",
+        "Bash(dpkg-query *)",
+        "Bash(./shared/ *)",
+        "Bash(./waf *)",
+        "Bash(pnpm *)",
+
+        "Bash(git clone --depth 1 * https://github.com/ArduPilot/ardupilot.git ./shared/tools/*)",
+        "Bash(./shared/tools/venv-ardupilot/bin/python *)",
+        "Bash(./shared/tools/venv-ardupilot/bin/pip *)",
+        "Bash(env SITL_BINARY=*)",
+
+        "Bash(ls -la /tmp/sitl-locks)",
+        "Bash(ls -la /tmp/sitl-locks/*)",
+        "Bash(ls /tmp/sitl-locks)",
+        "Bash(ls /tmp/sitl-locks/*)",
+        "Read(//tmp/sitl-locks/**)"
+      ]
+    },
+    "reviewer": {
+      "model": "sonnet",
+      "capabilities": [
+        "worktree",
+        "comment"
+      ],
+      "allow": [
+        "Bash(gh run view*)",
+        "Bash(gh run list*)",
+        "Bash(gh run watch*)",
+        "Bash(gh workflow view*)",
+        "Bash(gh workflow list*)",
+        "Bash(git ls-remote*)"
+      ]
+    },
+    "qa": {
+      "model": "haiku",
+      "capabilities": [
+        "worktree",
+        "tests",
+        "comment"
+      ],
+      "env": {
+        "SITL_BINARY": "/home/padcom/projects/padcom-team/shared/tools/ardupilot/build/sitl/bin/arducopter"
+      },
+      "allow": [
+        "Bash(git clone /home/padcom/projects/padcom-team/repos/* /home/padcom/projects/padcom-team/workspaces/qa/*)",
+        "Bash(git checkout*)",
+        "Bash(git switch*)",
+        "Bash(git pull*)",
+        "Bash(git stash*)",
+        "Bash(git cherry-pick*)",
+        "Bash(git rebase origin/*)",
+        "Bash(bash .github/*)",
+
+        "Bash(command -v *)",
+        "Bash(ls * /tmp/*)",
+        "Bash(pgrep*)",
+
+        "Bash(gh run view*)",
+        "Bash(gh run list*)",
+        "Bash(gh run watch*)",
+        "Bash(gh workflow view*)",
+        "Bash(gh workflow list*)",
+
+        "Bash(ls -la /tmp/sitl-locks)",
+        "Bash(ls -la /tmp/sitl-locks/*)",
+        "Bash(ls /tmp/sitl-locks)",
+        "Bash(ls /tmp/sitl-locks/*)",
+        "Read(//tmp/sitl-locks/**)"
+      ]
+    }
+  },
+  "testCommands": [
+    "npm ci*",
+    "npm install*",
+    "npm test*",
+    "npm run test*",
+    "npm run lint*",
+    "npm run build*",
+    "npx vitest*",
+    "npx tsc*",
+    "pytest*",
+    "python3 -m pytest*",
+    "pnpm install*",
+    "pnpm test*",
+    "pnpm run*",
+    "pnpm exec*",
+    "pnpm e2e*",
+    "pnpm build*",
+    "pnpm lint*",
+    "pnpm typecheck*",
+    "pnpm check*",
+    "pnpm --filter*",
+    "pnpm -r*",
+    "pnpm -w*",
+    "pnpm dlx*",
+    "pnpm vitest*",
+    "pnpm tsc*",
+    "pico test*",
+    "pico build*",
+    "pico run*",
+    "pico fmt*",
+    "pico lint*",
+    "pico --version",
+    "cmake *",
+    "ctest*",
+    "make*",
+    "cargo test*",
+    "cargo build*",
+    "cargo clippy*",
+    "go test*",
+    "go build*",
+    "python3 -m venv*",
+    "pytest*"
+  ],
+  "projects": [
+    {
+      "name": "pico-lang",
+      "url": "git@github.com:padcom/pico-lang"
+    },
+    {
+      "name": "pico-desktop",
+      "url": "git@github.com:padcom/pico-desktop"
+    },
+    {
+      "name": "pico-serialport",
+      "url": "git@github.com:padcom/pico-serialport"
+    },
+    {
+      "name": "pico-mavlink",
+      "url": "git@github.com:padcom/pico-mavlink"
+    },
+    {
+      "name": "drone-configurator",
+      "url": "git@github.com:padcom/drone-configurator"
+    }
+  ]
+}

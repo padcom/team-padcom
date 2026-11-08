@@ -1,0 +1,32 @@
+#!/usr/bin/env node
+// The only way agents can merge: a green, open agent/* PR of a team project, at the exact commit that was verified.
+import { spawnSync } from 'node:child_process'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { loadConfig, mergeBlockers, teamRepoOfPrUrl } from '../lib/team.mjs'
+
+const FIELDS = 'state,isDraft,mergeable,headRefName,headRefOid,isCrossRepository,statusCheckRollup'
+
+function die(message) {
+  console.error(`merge-pr: ${message}`)
+  process.exit(1)
+}
+
+function gh(...args) {
+  const result = spawnSync('gh', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] })
+  if (result.status !== 0) die(`gh ${args.slice(0, 2).join(' ')} failed`)
+  return result.stdout
+}
+
+const [url, sha, ...extra] = process.argv.slice(2)
+if (!url || !sha || extra.length) die('usage: merge-pr <pr-url> <full-verified-commit-sha>')
+
+const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
+if (!teamRepoOfPrUrl(url, loadConfig(root))) die(`not a PR of a project in team.json: ${url}`)
+
+const blockers = mergeBlockers(JSON.parse(gh('pr', 'view', url, '--json', FIELDS)), sha)
+if (blockers.length) die(`refusing to merge ${url}:\n- ${blockers.join('\n- ')}`)
+
+// --match-head-commit makes GitHub refuse if a commit lands after the checks above.
+process.stdout.write(gh('pr', 'merge', url, '--merge', '--match-head-commit', sha))
+console.log(`merged ${url} at ${sha}`)

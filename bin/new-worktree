@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Creates a private worktree for the calling role and prints its path.
+# Usage: new-worktree <repo> <task> [base]
+#   developer: creates branch agent/<task>, from origin/agent/<task> if it exists, else [base] or origin/HEAD.
+#   others:    detached checkout; base is pr-<number>, agent/<task>, or empty for origin/HEAD.
+set -euo pipefail
+
+die() { echo "new-worktree: $1" >&2; exit 1; }
+
+role="${TEAM_ROLE:-}"
+[ -n "$role" ] || die "TEAM_ROLE is not set"
+[ $# -ge 2 ] && [ $# -le 3 ] || die "usage: new-worktree <repo> <task> [base]"
+repo="$1"; task="$2"; base="${3:-}"
+[[ "$repo" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*$ ]] || die "invalid repo name"
+[[ "$task" =~ ^[a-z0-9][a-z0-9._-]*$ ]] || die "invalid task name: use lowercase letters, digits, dots, dashes"
+[ -z "$base" ] || [[ "$base" =~ ^[a-zA-Z0-9][a-zA-Z0-9._/-]*$ ]] || die "invalid base ref"
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+clone="$root/repos/$repo"
+dest="$root/workspaces/$role/$repo-$task"
+[ -d "$clone/.git" ] || die "unknown project: $repo"
+
+if [ -e "$dest" ]; then
+  echo "$dest"
+  exit 0
+fi
+
+mkdir -p "$(dirname "$dest")"
+git -C "$clone" fetch --quiet origin
+
+if [ "$role" = "developer" ]; then
+  branch="agent/$task"
+  if git -C "$clone" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+    start="origin/$branch"
+  elif [ -n "$base" ]; then
+    start="origin/$base"
+  else
+    start="origin/HEAD"
+  fi
+  git -C "$clone" worktree add --quiet -b "$branch" "$dest" "$start"
+else
+  case "$base" in
+    "") ref="origin/HEAD" ;;
+    pr-[0-9]*)
+      git -C "$clone" fetch --quiet origin "pull/${base#pr-}/head"
+      ref="FETCH_HEAD"
+      ;;
+    agent/*) ref="origin/$base" ;;
+    *) die "base must be empty, pr-<number>, or agent/<task>" ;;
+  esac
+  git -C "$clone" worktree add --quiet --detach "$dest" "$ref"
+fi
+
+echo "$dest"

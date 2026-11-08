@@ -1,0 +1,12 @@
+repos/
+workspaces/
+node_modules/
+
+# The running team's state. Only the empty directory the tools expect is tracked.
+shared/*
+!shared/decisions/
+shared/decisions/*
+!shared/decisions/.gitkeep
+
+# Local symlink to a binary built under shared/tools.
+bin/arducopter

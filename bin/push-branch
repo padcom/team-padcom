@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# The only way agents can push: the current agent/* branch, to the same name, never forced.
+set -euo pipefail
+
+die() { echo "push-branch: $1" >&2; exit 1; }
+
+[ $# -eq 0 ] || die "takes no arguments; it pushes the current branch"
+branch="$(git symbolic-ref --quiet --short HEAD)" || die "not on a branch"
+case "$branch" in
+  agent/*) ;;
+  *) die "refusing to push '$branch': only agent/* branches can be pushed" ;;
+esac
+
+exec git push --set-upstream origin "refs/heads/$branch:refs/heads/$branch"
