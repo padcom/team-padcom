@@ -28,7 +28,7 @@ fi
 mkdir -p "$(dirname "$dest")"
 git -C "$clone" fetch --quiet origin
 
-if [ "$role" = "developer" ]; then
+if [ "$role" = "developer" ] || [ "$role" = "developer2" ]; then
   branch="agent/$task"
   if git -C "$clone" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
     start="origin/$branch"

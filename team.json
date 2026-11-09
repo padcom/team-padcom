@@ -8,6 +8,16 @@
       "capabilities": [
         "editShared",
         "merge"
+      ],
+      "allow": [
+        "Bash(gh issue edit*)",
+        "Bash(gh label create*)",
+        "Bash(gh run view*)",
+        "Bash(gh run list*)",
+        "Bash(gh run rerun*)",
+        "Bash(grep*)",
+        "Bash(head*)",
+        "Bash(tail*)"
       ]
     },
     "architect": {
@@ -18,6 +28,10 @@
     },
     "developer": {
       "model": "sonnet",
+      "env": {
+        "LLVM_SYS_231_PREFIX": "/usr/lib/llvm-23",
+        "PATH": "/home/padcom/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin"
+      },
       "capabilities": [
         "worktree",
         "commit",
@@ -30,7 +44,6 @@
         "Bash(bash .github/*)",
         "Bash(/home/padcom/projects/padcom-team/shared/tools/venv-ardupilot/bin/python *)",
         "Bash(/home/padcom/projects/padcom-team/shared/tools/venv-ardupilot/bin/pip *)",
-
         "Bash(git fetch *)",
         "Bash(git checkout *)",
         "Bash(git submodule *)",
@@ -47,36 +60,64 @@
         "Bash(./shared/ *)",
         "Bash(./waf *)",
         "Bash(pnpm *)",
-
         "Bash(git clone --depth 1 * https://github.com/ArduPilot/ardupilot.git ./shared/tools/*)",
         "Bash(./shared/tools/venv-ardupilot/bin/python *)",
         "Bash(./shared/tools/venv-ardupilot/bin/pip *)",
         "Bash(env SITL_BINARY=*)",
-
         "Bash(ls -la /tmp/sitl-locks)",
         "Bash(ls -la /tmp/sitl-locks/*)",
         "Bash(ls /tmp/sitl-locks)",
         "Bash(ls /tmp/sitl-locks/*)",
-        "Read(//tmp/sitl-locks/**)"
+        "Read(//tmp/sitl-locks/**)",
+        "Bash(cargo build*)",
+        "Bash(cargo test*)",
+        "Bash(cargo clippy*)",
+        "Bash(cargo fmt*)",
+        "Bash(scripts/test.sh*)",
+        "Bash(arducopter *)",
+        "Bash(/home/padcom/projects/padcom-team/bin/arducopter *)",
+        "Bash(pkill arducopter)",
+        "Bash(pgrep*)",
+        "Bash(node /home/padcom/projects/padcom-team/workspaces/*/*/tooling/cli/bin/pico-desktop.mjs create *)",
+        "Bash(node tooling/cli/bin/pico-desktop.mjs create *)",
+        "Bash(grep*)",
+        "Bash(head*)",
+        "Bash(tail*)",
+        "Bash(git cherry-pick *)",
+        "Bash(git rebase origin/*)",
+        "Edit(/home/padcom/projects/padcom-team/workspaces/developer/**)",
+        "Write(/home/padcom/projects/padcom-team/workspaces/developer/**/tooling/templates/vue-ts/.vscode/*)"
       ]
     },
     "reviewer": {
       "model": "sonnet",
+      "env": {
+        "PATH": "/home/padcom/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin"
+      },
       "capabilities": [
         "worktree",
         "comment"
       ],
       "allow": [
+        "Bash(grep*)",
+        "Bash(head*)",
+        "Bash(tail*)",
         "Bash(gh run view*)",
         "Bash(gh run list*)",
         "Bash(gh run watch*)",
         "Bash(gh workflow view*)",
         "Bash(gh workflow list*)",
-        "Bash(git ls-remote*)"
+        "Bash(git ls-remote*)",
+        "Bash(grep*)",
+        "Bash(head*)",
+        "Bash(tail*)"
       ]
     },
     "qa": {
       "model": "haiku",
+      "env": {
+        "PATH": "/home/padcom/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin"
+      },
       "capabilities": [
         "worktree",
         "tests",
@@ -86,6 +127,9 @@
         "SITL_BINARY": "/home/padcom/projects/padcom-team/shared/tools/ardupilot/build/sitl/bin/arducopter"
       },
       "allow": [
+        "Bash(grep*)",
+        "Bash(head*)",
+        "Bash(tail*)",
         "Bash(git clone /home/padcom/projects/padcom-team/repos/* /home/padcom/projects/padcom-team/workspaces/qa/*)",
         "Bash(git checkout*)",
         "Bash(git switch*)",
@@ -94,22 +138,30 @@
         "Bash(git cherry-pick*)",
         "Bash(git rebase origin/*)",
         "Bash(bash .github/*)",
-
         "Bash(command -v *)",
         "Bash(ls * /tmp/*)",
         "Bash(pgrep*)",
-
         "Bash(gh run view*)",
         "Bash(gh run list*)",
         "Bash(gh run watch*)",
         "Bash(gh workflow view*)",
         "Bash(gh workflow list*)",
-
         "Bash(ls -la /tmp/sitl-locks)",
         "Bash(ls -la /tmp/sitl-locks/*)",
         "Bash(ls /tmp/sitl-locks)",
         "Bash(ls /tmp/sitl-locks/*)",
-        "Read(//tmp/sitl-locks/**)"
+        "Read(//tmp/sitl-locks/**)",
+        "Bash(SITL_BINARY=* pnpm --filter ./apps/frontend exec vitest run*)",
+        "Bash(arducopter *)",
+        "Bash(/home/padcom/projects/padcom-team/bin/arducopter *)",
+        "Bash(pkill arducopter)",
+        "Bash(node /home/padcom/projects/padcom-team/workspaces/*/*/tooling/cli/bin/pico-desktop.mjs create *)",
+        "Bash(node tooling/cli/bin/pico-desktop.mjs create *)",
+        "Bash(grep*)",
+        "Bash(head*)",
+        "Bash(tail*)",
+        "Edit(/home/padcom/projects/padcom-team/workspaces/developer/**)",
+        "Write(/home/padcom/projects/padcom-team/workspaces/developer/**/tooling/templates/vue-ts/.vscode/*)"
       ]
     }
   },
@@ -122,6 +174,11 @@
     "npm run build*",
     "npx vitest*",
     "npx tsc*",
+    "node --test*",
+    "node scripts/*",
+    "node --version",
+    "npm run*",
+    "npx --no-install*",
     "pytest*",
     "python3 -m pytest*",
     "pnpm install*",
@@ -154,7 +211,9 @@
     "go test*",
     "go build*",
     "python3 -m venv*",
-    "pytest*"
+    "pytest*",
+    "cargo fmt*",
+    "scripts/test.sh*"
   ],
   "projects": [
     {
@@ -176,6 +235,14 @@
     {
       "name": "drone-configurator",
       "url": "git@github.com:padcom/drone-configurator"
+    },
+    {
+      "name": "drone-configurator-status",
+      "url": "git@github.com:padcom/drone-configurator-status.git"
+    },
+    {
+      "name": "vue-template",
+      "url": "git@github.com:padcom/vue-template.git"
     }
   ]
 }
