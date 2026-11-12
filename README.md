@@ -87,3 +87,7 @@ To allow more, add commands to `testCommands`, or add `"allow": ["Bash(make test
 ```sh
 node --test test/
 ```
+
+## License
+
+[MIT](LICENSE)
