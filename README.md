@@ -43,6 +43,7 @@ By default the services run while you are logged in. To keep them running after 
 | --- | --- |
 | `team status` | Service state |
 | `team logs <role>` | Follow one agent's activity |
+| `team tail` | Follow all agents' activity, as `[role] HH:MM:SS message` |
 | `team restart [role]` | Restart one agent or all. Sessions resume their conversation |
 | `team stop [role]` | Stop one agent or all |
 | `team add-project <url> [name]` | Clone another project for the team |
@@ -81,6 +82,7 @@ To allow more, add commands to `testCommands`, or add `"allow": ["Bash(make test
 - The Discord plugin is disabled at user scope on purpose. Only the lead enables it, so that other Claude sessions do not connect to the same bot. Do not enable it globally.
 - After a plugin server fails, Claude Code skips it for 15 minutes. If Discord cannot connect at startup, the lead restarts itself after 16 minutes.
 - If you switch Node versions with fnm, run `team install` again, since the services record the Node path.
+- Run `team install` from a terminal on your desktop, since the services record `DISPLAY` and `XAUTHORITY` for tests that open a window. Without a display, the CEF host fails with a message about user namespaces.
 
 ## Development
 

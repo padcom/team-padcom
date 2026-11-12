@@ -25,6 +25,7 @@
         "Bash(gh run view*)",
         "Bash(gh run list*)",
         "Bash(gh run rerun*)",
+        "Bash(gh run cancel*)",
         "Bash(grep*)",
         "Bash(head*)",
         "Bash(tail*)"
@@ -39,8 +40,11 @@
     "developer": {
       "model": "sonnet",
       "env": {
+        "PICO_DESKTOP_HOST": "/home/padcom/projects/padcom-team/shared/tools/pico-desktop/build/cef/runtime/cef-host/pico-desktop-host",
+        "SITL_BINARY": "/home/padcom/projects/padcom-team/bin/arducopter",
+        "SITL_FLIGHT": "1",
         "LLVM_SYS_231_PREFIX": "/usr/lib/llvm-23",
-        "PATH": "/home/padcom/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin"
+        "PATH": "/home/padcom/.local/share/pnpm"
       },
       "capabilities": [
         "worktree",
@@ -96,14 +100,23 @@
         "Bash(tail*)",
         "Bash(git cherry-pick *)",
         "Bash(git rebase origin/*)",
+        "Bash(env NODE_ENV=development PICO_DESKTOP_HOST=*)",
+        "Bash(node relayout-move.mjs*)",
+        "Bash(xvfb-run -a pnpm e2e*)",
+        "Bash(xvfb-run -a pnpm exec vitest*)",
         "Edit(/home/padcom/projects/padcom-team/workspaces/developer/**)",
-        "Write(/home/padcom/projects/padcom-team/workspaces/developer/**/tooling/templates/vue-ts/.vscode/*)"
+        "Write(/home/padcom/projects/padcom-team/workspaces/developer/**/tooling/templates/vue-ts/.vscode/*)",
+        "Edit(/home/padcom/projects/padcom-team/shared/screenshots/**)",
+        "Write(/home/padcom/projects/padcom-team/shared/screenshots/**)"
       ]
     },
     "reviewer": {
       "model": "sonnet",
       "env": {
-        "PATH": "/home/padcom/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin"
+        "PATH": "/home/padcom/.local/share/pnpm",
+        "PICO_DESKTOP_HOST": "/home/padcom/projects/padcom-team/shared/tools/pico-desktop/build/cef/runtime/cef-host/pico-desktop-host",
+        "SITL_BINARY": "/home/padcom/projects/padcom-team/bin/arducopter",
+        "SITL_FLIGHT": "1"
       },
       "capabilities": [
         "worktree",
@@ -120,24 +133,23 @@
         "Bash(gh workflow view*)",
         "Bash(gh workflow list*)",
         "Bash(git ls-remote*)",
-        "Bash(grep*)",
-        "Bash(head*)",
-        "Bash(tail*)"
+        "Bash(xvfb-run -a pnpm e2e*)",
+        "Bash(xvfb-run -a pnpm exec vitest*)"
       ]
     },
     "qa": {
       "model": "haiku",
       "env": {
-        "PATH": "/home/padcom/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin"
+        "PATH": "/home/padcom/.local/share/pnpm",
+        "PICO_DESKTOP_HOST": "/home/padcom/projects/padcom-team/shared/tools/pico-desktop/build/cef/runtime/cef-host/pico-desktop-host",
+        "SITL_BINARY": "/home/padcom/projects/padcom-team/bin/arducopter",
+        "SITL_FLIGHT": "1"
       },
       "capabilities": [
         "worktree",
         "tests",
         "comment"
       ],
-      "env": {
-        "SITL_BINARY": "/home/padcom/projects/padcom-team/shared/tools/ardupilot/build/sitl/bin/arducopter"
-      },
       "allow": [
         "Bash(grep*)",
         "Bash(head*)",
@@ -173,6 +185,8 @@
         "Bash(grep*)",
         "Bash(head*)",
         "Bash(tail*)",
+        "Bash(xvfb-run -a pnpm e2e*)",
+        "Bash(xvfb-run -a pnpm exec vitest*)",
         "Edit(/home/padcom/projects/padcom-team/workspaces/developer/**)",
         "Write(/home/padcom/projects/padcom-team/workspaces/developer/**/tooling/templates/vue-ts/.vscode/*)"
       ]

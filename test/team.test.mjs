@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { buildClaudeArgs, buildSettings, channelFailed, formatEvent, loadConfig, mergeBlockers, projectDirName, renderUnit, servicePath, teamRepoOfPrUrl } from '../lib/team.mjs'
+import { agentEnv, buildClaudeArgs, buildSettings, channelFailed, formatEvent, formatJournalEntry, loadConfig, mergeBlockers, projectDirName, renderUnit, servicePath, teamRepoOfPrUrl } from '../lib/team.mjs'
 
 const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const config = loadConfig(repoRoot)
@@ -127,6 +127,29 @@ test('renderUnit includes the captured environment and restart policy', () => {
   assert.match(unit, /Restart=always/)
 })
 
+test('agentEnv applies role env and keeps the inherited PATH reachable', () => {
+  const roles = {
+    plain: {},
+    custom: { env: { PATH: '/role/bin', FOO: 'role', TEAM_ROLE: 'spoofed' } },
+    talker: { channel: true },
+  }
+  const env = agentEnv('custom', root, { roles }, { PATH: '/inherited', FOO: 'base', KEEP: 'yes' })
+  assert.equal(env.PATH, '/srv/team/bin:/role/bin:/inherited')
+  assert.equal(env.FOO, 'role')
+  assert.equal(env.KEEP, 'yes')
+  assert.equal(env.TEAM_ROLE, 'custom')
+  assert.equal(env.MCP_PROTOCOL_NEGOTIATION, undefined)
+  assert.equal(agentEnv('plain', root, { roles }, { PATH: '/inherited' }).PATH, '/srv/team/bin:/inherited')
+  assert.equal(agentEnv('talker', root, { roles }, { PATH: '/inherited' }).MCP_PROTOCOL_NEGOTIATION, 'legacy')
+})
+
+test('renderUnit records the display only when there is one', () => {
+  const unit = renderUnit({ root, node: '/n/node', pathEnv: '/a', display: ':0', xauthority: '/h/.Xauthority' })
+  assert.match(unit, /Environment=DISPLAY=:0/)
+  assert.match(unit, /Environment=XAUTHORITY=\/h\/\.Xauthority/)
+  assert.doesNotMatch(renderUnit({ root, node: '/n/node', pathEnv: '/a' }), /DISPLAY|XAUTHORITY/)
+})
+
 test('servicePath drops per-shell fnm directories and leads with the node directory', () => {
   const result = servicePath('/run/user/1000/fnm_multishells/1_2/bin:/usr/bin:/n/bin', '/n/bin')
   assert.equal(result, '/n/bin:/usr/bin')
@@ -137,4 +160,23 @@ test('formatEvent summarizes turns and ignores other events', () => {
   assert.equal(formatEvent({ type: 'result', subtype: 'success' }), '[turn success]')
   const event = { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command: 'ls' } }] } }
   assert.equal(formatEvent(event), 'tool: Bash ls')
+})
+
+const journalEntry = (fields) => ({ __REALTIME_TIMESTAMP: String(new Date(2026, 10, 9, 7, 5, 3).getTime() * 1000), ...fields })
+
+test('formatJournalEntry prefixes agent output with its role and local time', () => {
+  const entry = journalEntry({ _SYSTEMD_UNIT: 'user@1000.service', _SYSTEMD_USER_UNIT: 'padcom-team@developer.service', MESSAGE: 'tool: Bash ls' })
+  assert.equal(formatJournalEntry(entry), '[developer] 07:05:03 tool: Bash ls')
+})
+
+test('formatJournalEntry attributes systemd messages to the unit they are about', () => {
+  const entry = journalEntry({ _SYSTEMD_USER_UNIT: 'init.scope', USER_UNIT: 'padcom-team@qa.service', MESSAGE: 'Started agent.' })
+  assert.equal(formatJournalEntry(entry), '[qa] 07:05:03 Started agent.')
+})
+
+test('formatJournalEntry decodes byte-array messages and skips unusable entries', () => {
+  const unit = { _SYSTEMD_USER_UNIT: 'padcom-team@lead.service' }
+  assert.equal(formatJournalEntry(journalEntry({ ...unit, MESSAGE: [104, 105] })), '[lead] 07:05:03 hi')
+  assert.equal(formatJournalEntry(journalEntry({ ...unit, MESSAGE: null })), null)
+  assert.equal(formatJournalEntry(journalEntry({ _SYSTEMD_USER_UNIT: 'init.scope', MESSAGE: 'x' })), null)
 })

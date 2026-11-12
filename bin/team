@@ -6,7 +6,7 @@ import path from 'node:path'
 import readline from 'node:readline'
 import { fileURLToPath } from 'node:url'
 import {
-  bootMessage, buildClaudeArgs, channelFailed, channelPluginDirs, channelPluginSettings, formatEvent, hasPriorSession, loadConfig, renderUnit, roleConfig,
+  agentEnv, bootMessage, buildClaudeArgs, channelFailed, channelPluginDirs, channelPluginSettings, formatEvent, formatJournalEntry, hasPriorSession, loadConfig, renderUnit, roleConfig,
   roleDir, servicePath,
 } from '../lib/team.mjs'
 
@@ -35,13 +35,7 @@ function run(role) {
   }
   const child = spawn('claude', buildClaudeArgs(role, root, config, { resume }), {
     cwd,
-    // Channel messages cannot be delivered over MCP protocol revision 2026-07-28.
-    env: {
-      ...process.env,
-      PATH: `${path.join(root, 'bin')}:${process.env.PATH}`,
-      TEAM_ROLE: role,
-      ...(definition.channel && { MCP_PROTOCOL_NEGOTIATION: 'legacy' }),
-    },
+    env: agentEnv(role, root, config, process.env),
     // stdin stays open and silent: it keeps -p alive, and work arrives through messages.
     stdio: ['pipe', 'pipe', 'inherit'],
   })
@@ -73,6 +67,8 @@ function install() {
     node: process.execPath,
     pathEnv: servicePath(process.env.PATH, path.dirname(process.execPath)),
     sshAuthSock: process.env.SSH_AUTH_SOCK,
+    display: process.env.DISPLAY,
+    xauthority: process.env.XAUTHORITY,
   }))
   systemctl('daemon-reload')
   systemctl('enable', ...targets())
@@ -139,6 +135,17 @@ function check() {
   for (const [label, ok] of Object.entries(results)) console.log(`${ok ? 'ok     ' : 'MISSING'} ${label}`)
 }
 
+// Matches units by wildcard so an agent still running after leaving team.json stays visible.
+function tail() {
+  const child = spawn('journalctl', ['--user', '-u', `${service}@*`, '-n', '50', '-f', '-o', 'json'], { stdio: ['ignore', 'pipe', 'inherit'] })
+  process.stdout.on('error', () => child.kill())
+  readline.createInterface({ input: child.stdout }).on('line', (line) => {
+    const text = formatJournalEntry(JSON.parse(line))
+    if (text) console.log(text)
+  })
+  child.on('exit', (code) => process.exit(code ?? 0))
+}
+
 const usage = `Usage: team <command>
   check                        Show what setup is still missing
   set-token                    Save the Discord bot token
@@ -148,6 +155,7 @@ const usage = `Usage: team <command>
   start|stop|restart [role]    Control all agents, or one
   status                       Show agent services
   logs <role>                  Follow one agent's activity
+  tail                         Follow all agents' activity, each line prefixed with its role
   run <role>                   Run an agent in the foreground (used by systemd)`
 
 const [command, ...args] = process.argv.slice(2)
@@ -163,6 +171,7 @@ const commands = {
   restart: () => systemctl('restart', ...targets(args[0])),
   status: () => systemctl('list-units', `${service}@*`, '--all', '--no-pager'),
   logs: () => spawnSync('journalctl', ['--user', '-u', instance(args[0]), '-n', '50', '-f', '-o', 'cat'], { stdio: 'inherit' }),
+  tail,
 }
 
 if (!commands[command]) {
