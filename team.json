@@ -1,5 +1,6 @@
 {
   "serviceName": "padcom-team",
+  "license": "MIT",
   "channel": "plugin:discord@claude-plugins-official",
   "roles": {
     "lead": {
