@@ -56,11 +56,11 @@ Sessions run in `dontAsk` mode, so anything not explicitly allowed is refused an
 
 | Role | Edit | Git and GitHub |
 | --- | --- | --- |
-| lead | `shared/` | Merges verified PRs with `merge-pr` |
-| architect | `shared/` | Read only |
-| developer | Own worktrees | Commit, push `agent/*` branches, open PRs |
-| reviewer | Own worktrees | PR and issue comments |
-| qa | Own worktrees | PR and issue comments, run tests |
+| lead | `shared/` | Merges verified PRs with `merge-pr`; manages issues, labels, PR comments and CI runs |
+| architect | `shared/` | Read only (views PRs, issues, repos) |
+| developer | Own worktrees | Commit, push `agent/*` branches, open, comment on and close PRs, manage CI runs |
+| reviewer | Own worktrees | Manage issues, comment on and close PRs, manage CI runs |
+| qa | Own worktrees | Manage issues, comment on and close PRs, manage CI runs, run tests |
 
 You do the deploying and releasing. `git push` is denied outright. The only way to push is `bin/push-branch`, which accepts just the current `agent/*` branch and never forces.
 
@@ -73,7 +73,14 @@ You do the deploying and releasing. `git push` is denied outright. The only way 
 - Anyone on the Discord allowlist can direct the team. Keep it to yourself.
 - All agents share one GitHub identity, so the reviewer can comment but cannot formally approve.
 
-To allow more, add commands to `testCommands`, or add `"allow": ["Bash(make test*)"]` to a role in `team.json`, then run `team restart`.
+To allow more, edit `team.json` and run `team restart`. Rules are layered:
+
+- `testCommands`: commands for roles with the `tests` capability.
+- Top-level `allow`: rules every role gets.
+- `permissionSets`: named groups of rules. Every `gh` rule lives in a `gh-*` set (`gh-read`, `gh-pr`, `gh-pr-create`, `gh-issue`, `gh-label`, `gh-run`, `gh-workflow`), so a role without `gh-read` cannot even view PRs. A role uses sets with `"permissionSets": ["sitl", "gh-run"]`. An unknown set name stops startup with an error.
+- A role's own `allow`: rules only that role gets, such as `"allow": ["Bash(make test*)"]`.
+
+Duplicate rules across layers are removed. These layers only add to `allow`, so the deny rules above still win.
 
 ## Good to know
 

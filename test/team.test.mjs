@@ -18,6 +18,12 @@ test('only the developer can push or open a PR', () => {
   }
 })
 
+test('every role can read PRs and issues', () => {
+  for (const role of Object.keys(config.roles)) {
+    assert.ok(allow(role).includes('Bash(gh pr view*)') && allow(role).includes('Bash(gh issue view*)'), role)
+  }
+})
+
 test('no role is allowed a raw push or a merge, and all deny them', () => {
   for (const role of Object.keys(config.roles)) {
     const { allow: allowed, deny } = buildSettings(role, root, config).permissions
@@ -113,6 +119,42 @@ test('unknown roles and capabilities are rejected', () => {
   assert.throws(() => buildSettings('nobody', root, config), /Unknown role/)
   const broken = { ...config, roles: { x: { model: 'haiku', capabilities: ['fly'] } } }
   assert.throws(() => buildSettings('x', root, broken), /Unknown capability/)
+})
+
+const layered = {
+  ...config,
+  allow: ['Bash(grep*)'],
+  permissionSets: { sitl: ['Bash(pkill arducopter)'] },
+  roles: {
+    pilot: { model: 'haiku', permissionSets: ['sitl'], allow: ['Bash(grep*)', 'Bash(pgrep*)'] },
+    planner: { model: 'haiku' },
+  },
+}
+const layeredAllow = (role) => buildSettings(role, root, layered).permissions.allow
+
+test('shared allow rules reach every role', () => {
+  for (const role of Object.keys(layered.roles)) assert.ok(layeredAllow(role).includes('Bash(grep*)'), role)
+})
+
+test('permission sets reach only the roles that use them', () => {
+  assert.ok(layeredAllow('pilot').includes('Bash(pkill arducopter)'))
+  assert.ok(!layeredAllow('planner').includes('Bash(pkill arducopter)'))
+  assert.ok(layeredAllow('pilot').includes('Bash(pgrep*)'))
+})
+
+test('allow rules from overlapping layers appear once', () => {
+  const rules = layeredAllow('pilot')
+  assert.equal(rules.length, new Set(rules).size)
+})
+
+test('unknown permission sets are rejected', () => {
+  const broken = { ...config, roles: { x: { model: 'haiku', permissionSets: ['fly'] } } }
+  assert.throws(() => buildSettings('x', root, broken), /Unknown permission set "fly"/)
+})
+
+test('every permission set in team.json is used by some role', () => {
+  const used = new Set(Object.values(config.roles).flatMap((definition) => definition.permissionSets ?? []))
+  for (const name of Object.keys(config.permissionSets ?? {})) assert.ok(used.has(name), name)
 })
 
 test('projectDirName matches the Claude Code directory encoding', () => {

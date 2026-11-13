@@ -1,6 +1,77 @@
 {
   "serviceName": "padcom-team",
   "channel": "plugin:discord@claude-plugins-official",
+  "allow": [
+    "Bash(grep*)",
+    "Bash(head*)",
+    "Bash(tail*)",
+    "Bash(git ls-remote*)"
+  ],
+  "permissionSets": {
+    "gh-read": [
+      "Bash(gh pr view*)",
+      "Bash(gh pr list*)",
+      "Bash(gh pr diff*)",
+      "Bash(gh pr checks*)",
+      "Bash(gh issue view*)",
+      "Bash(gh issue list*)",
+      "Bash(gh repo view*)"
+    ],
+    "gh-pr-create": [
+      "Bash(gh pr create*)"
+    ],
+    "gh-issue": [
+      "Bash(gh issue create*)",
+      "Bash(gh issue comment*)",
+      "Bash(gh issue close*)",
+      "Bash(gh issue reopen*)",
+      "Bash(gh issue edit*)"
+    ],
+    "gh-pr": [
+      "Bash(gh pr comment*)",
+      "Bash(gh pr close*)"
+    ],
+    "gh-label": [
+      "Bash(gh label create*)"
+    ],
+    "gh-run": [
+      "Bash(gh run view*)",
+      "Bash(gh run list*)",
+      "Bash(gh run watch*)",
+      "Bash(gh run rerun*)",
+      "Bash(gh run cancel*)"
+    ],
+    "gh-workflow": [
+      "Bash(gh workflow view*)",
+      "Bash(gh workflow list*)"
+    ],
+    "e2e": [
+      "Bash(xvfb-run -a pnpm e2e*)",
+      "Bash(xvfb-run -a pnpm exec vitest*)"
+    ],
+    "sitl": [
+      "Bash(arducopter *)",
+      "Bash(/home/padcom/projects/padcom-team/bin/arducopter *)",
+      "Bash(pkill arducopter)",
+      "Bash(pgrep*)",
+      "Bash(ls -la /tmp/sitl-locks)",
+      "Bash(ls -la /tmp/sitl-locks/*)",
+      "Bash(ls /tmp/sitl-locks)",
+      "Bash(ls /tmp/sitl-locks/*)",
+      "Read(//tmp/sitl-locks/**)"
+    ],
+    "pico-desktop": [
+      "Bash(node /home/padcom/projects/padcom-team/workspaces/*/*/tooling/cli/bin/pico-desktop.mjs create *)",
+      "Bash(node tooling/cli/bin/pico-desktop.mjs create *)"
+    ],
+    "developer-workspace": [
+      "Edit(/home/padcom/projects/padcom-team/workspaces/developer/**)",
+      "Write(/home/padcom/projects/padcom-team/workspaces/developer/**/tooling/templates/vue-ts/.vscode/*)"
+    ],
+    "ardupilot-docs": [
+      "WebFetch(domain:ardupilot.org)"
+    ]
+  },
   "roles": {
     "lead": {
       "model": "sonnet",
@@ -9,32 +80,22 @@
         "editShared",
         "merge"
       ],
-      "allow": [
-        "Bash(gh issue create*)",
-        "Bash(gh issue comment*)",
-        "Bash(gh issue close*)",
-        "Bash(gh issue reopen*)",
-        "Bash(gh issue list*)",
-        "Bash(gh issue view*)",
-        "Bash(gh issue edit*)",
-        "Bash(gh label create*)",
-        "Bash(gh pr list*)",
-        "Bash(gh pr view*)",
-        "Bash(gh pr checks*)",
-        "Bash(gh pr close*)",
-        "Bash(gh run view*)",
-        "Bash(gh run list*)",
-        "Bash(gh run rerun*)",
-        "Bash(gh run cancel*)",
-        "Bash(grep*)",
-        "Bash(head*)",
-        "Bash(tail*)"
+      "permissionSets": [
+        "gh-read",
+        "gh-issue",
+        "gh-pr",
+        "gh-label",
+        "gh-run",
+        "gh-workflow"
       ]
     },
     "architect": {
       "model": "sonnet",
       "capabilities": [
         "editShared"
+      ],
+      "permissionSets": [
+        "gh-read"
       ]
     },
     "developer": {
@@ -52,6 +113,18 @@
         "push",
         "tests"
       ],
+      "permissionSets": [
+        "gh-read",
+        "gh-pr",
+        "gh-pr-create",
+        "gh-run",
+        "gh-workflow",
+        "e2e",
+        "sitl",
+        "pico-desktop",
+        "developer-workspace",
+        "ardupilot-docs"
+      ],
       "allow": [
         "Bash(git clone /home/padcom/projects/padcom-team/repos/* /home/padcom/projects/padcom-team/workspaces/developer/*)",
         "Bash(git clone --depth 1 * https://github.com/ArduPilot/ardupilot.git /home/padcom/projects/padcom-team/shared/tools/*)",
@@ -61,14 +134,6 @@
         "Bash(git fetch *)",
         "Bash(git checkout *)",
         "Bash(git submodule *)",
-        "Bash(gh pr create*)",
-        "Bash(gh pr comment*)",
-        "Bash(gh run view*)",
-        "Bash(gh run list*)",
-        "Bash(gh run watch*)",
-        "Bash(gh workflow view*)",
-        "Bash(gh workflow list*)",
-        "Bash(git ls-remote*)",
         "Bash(mkdir *)",
         "Bash(python3 *)",
         "Bash(dpkg-query *)",
@@ -79,33 +144,10 @@
         "Bash(./shared/tools/venv-ardupilot/bin/python *)",
         "Bash(./shared/tools/venv-ardupilot/bin/pip *)",
         "Bash(env SITL_BINARY=*)",
-        "Bash(ls -la /tmp/sitl-locks)",
-        "Bash(ls -la /tmp/sitl-locks/*)",
-        "Bash(ls /tmp/sitl-locks)",
-        "Bash(ls /tmp/sitl-locks/*)",
-        "Read(//tmp/sitl-locks/**)",
-        "Bash(cargo build*)",
-        "Bash(cargo test*)",
-        "Bash(cargo clippy*)",
-        "Bash(cargo fmt*)",
-        "Bash(scripts/test.sh*)",
-        "Bash(arducopter *)",
-        "Bash(/home/padcom/projects/padcom-team/bin/arducopter *)",
-        "Bash(pkill arducopter)",
-        "Bash(pgrep*)",
-        "Bash(node /home/padcom/projects/padcom-team/workspaces/*/*/tooling/cli/bin/pico-desktop.mjs create *)",
-        "Bash(node tooling/cli/bin/pico-desktop.mjs create *)",
-        "Bash(grep*)",
-        "Bash(head*)",
-        "Bash(tail*)",
         "Bash(git cherry-pick *)",
         "Bash(git rebase origin/*)",
         "Bash(env NODE_ENV=development PICO_DESKTOP_HOST=*)",
         "Bash(node relayout-move.mjs*)",
-        "Bash(xvfb-run -a pnpm e2e*)",
-        "Bash(xvfb-run -a pnpm exec vitest*)",
-        "Edit(/home/padcom/projects/padcom-team/workspaces/developer/**)",
-        "Write(/home/padcom/projects/padcom-team/workspaces/developer/**/tooling/templates/vue-ts/.vscode/*)",
         "Edit(/home/padcom/projects/padcom-team/shared/screenshots/**)",
         "Write(/home/padcom/projects/padcom-team/shared/screenshots/**)"
       ]
@@ -119,22 +161,16 @@
         "SITL_FLIGHT": "1"
       },
       "capabilities": [
-        "worktree",
-        "comment"
+        "worktree"
       ],
-      "allow": [
-        "Bash(grep*)",
-        "Bash(head*)",
-        "Bash(tail*)",
-        "Bash(gh pr comment*)",
-        "Bash(gh run view*)",
-        "Bash(gh run list*)",
-        "Bash(gh run watch*)",
-        "Bash(gh workflow view*)",
-        "Bash(gh workflow list*)",
-        "Bash(git ls-remote*)",
-        "Bash(xvfb-run -a pnpm e2e*)",
-        "Bash(xvfb-run -a pnpm exec vitest*)"
+      "permissionSets": [
+        "gh-read",
+        "gh-issue",
+        "gh-pr",
+        "gh-run",
+        "gh-workflow",
+        "e2e",
+        "ardupilot-docs"
       ]
     },
     "qa": {
@@ -147,13 +183,21 @@
       },
       "capabilities": [
         "worktree",
-        "tests",
-        "comment"
+        "tests"
+      ],
+      "permissionSets": [
+        "gh-read",
+        "gh-issue",
+        "gh-pr",
+        "gh-run",
+        "gh-workflow",
+        "e2e",
+        "sitl",
+        "pico-desktop",
+        "developer-workspace",
+        "ardupilot-docs"
       ],
       "allow": [
-        "Bash(grep*)",
-        "Bash(head*)",
-        "Bash(tail*)",
         "Bash(git clone /home/padcom/projects/padcom-team/repos/* /home/padcom/projects/padcom-team/workspaces/qa/*)",
         "Bash(git checkout*)",
         "Bash(git switch*)",
@@ -164,31 +208,7 @@
         "Bash(bash .github/*)",
         "Bash(command -v *)",
         "Bash(ls * /tmp/*)",
-        "Bash(pgrep*)",
-        "Bash(gh pr comment*)",
-        "Bash(gh run view*)",
-        "Bash(gh run list*)",
-        "Bash(gh run watch*)",
-        "Bash(gh workflow view*)",
-        "Bash(gh workflow list*)",
-        "Bash(ls -la /tmp/sitl-locks)",
-        "Bash(ls -la /tmp/sitl-locks/*)",
-        "Bash(ls /tmp/sitl-locks)",
-        "Bash(ls /tmp/sitl-locks/*)",
-        "Read(//tmp/sitl-locks/**)",
-        "Bash(SITL_BINARY=* pnpm --filter ./apps/frontend exec vitest run*)",
-        "Bash(arducopter *)",
-        "Bash(/home/padcom/projects/padcom-team/bin/arducopter *)",
-        "Bash(pkill arducopter)",
-        "Bash(node /home/padcom/projects/padcom-team/workspaces/*/*/tooling/cli/bin/pico-desktop.mjs create *)",
-        "Bash(node tooling/cli/bin/pico-desktop.mjs create *)",
-        "Bash(grep*)",
-        "Bash(head*)",
-        "Bash(tail*)",
-        "Bash(xvfb-run -a pnpm e2e*)",
-        "Bash(xvfb-run -a pnpm exec vitest*)",
-        "Edit(/home/padcom/projects/padcom-team/workspaces/developer/**)",
-        "Write(/home/padcom/projects/padcom-team/workspaces/developer/**/tooling/templates/vue-ts/.vscode/*)"
+        "Bash(SITL_BINARY=* pnpm --filter ./apps/frontend exec vitest run*)"
       ]
     }
   },
