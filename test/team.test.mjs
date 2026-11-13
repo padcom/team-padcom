@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { agentEnv, buildClaudeArgs, buildSettings, channelFailed, formatEvent, formatJournalEntry, loadConfig, mergeBlockers, projectDirName, renderUnit, servicePath, teamRepoOfPrUrl } from '../lib/team.mjs'
+import { agentEnv, buildClaudeArgs, buildSettings, channelFailed, formatEvent, formatJournalEntry, loadConfig, mergeBlockers, mergeConfig, roleEnv, projectDirName, renderUnit, servicePath, teamRepoOfPrUrl } from '../lib/team.mjs'
 
 const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const config = loadConfig(repoRoot)
@@ -152,9 +153,102 @@ test('unknown permission sets are rejected', () => {
   assert.throws(() => buildSettings('x', root, broken), /Unknown permission set "fly"/)
 })
 
-test('every permission set in team.json is used by some role', () => {
+test('every permission set is used by some role', () => {
   const used = new Set(Object.values(config.roles).flatMap((definition) => definition.permissionSets ?? []))
   for (const name of Object.keys(config.permissionSets ?? {})) assert.ok(used.has(name), name)
+})
+
+test('the project file appends lists, merges maps and overrides plain values', () => {
+  const team = {
+    serviceName: 'team',
+    allow: ['Bash(grep*)'],
+    permissionSets: { 'gh-read': ['Bash(gh pr view*)'] },
+    testCommands: ['npm test*'],
+    roles: { dev: { model: 'sonnet', capabilities: ['commit'], permissionSets: ['gh-read'], env: { A: '1' } } },
+  }
+  const project = {
+    serviceName: 'drone-team',
+    allow: ['Bash(tail*)'],
+    permissionSets: { 'gh-read': ['Bash(gh issue view*)'], sitl: ['Bash(pgrep*)'] },
+    testCommands: ['pico test*'],
+    projects: [{ name: 'p', url: 'git@github.com:o/p' }],
+    roles: { dev: { model: 'haiku', permissionSets: ['sitl'], env: { B: '2' }, allow: ['Bash(make*)'] } },
+  }
+  const merged = mergeConfig(team, project)
+  assert.equal(merged.serviceName, 'drone-team')
+  assert.deepEqual(merged.allow, ['Bash(grep*)', 'Bash(tail*)'])
+  assert.deepEqual(merged.permissionSets, { 'gh-read': ['Bash(gh pr view*)', 'Bash(gh issue view*)'], sitl: ['Bash(pgrep*)'] })
+  assert.deepEqual(merged.testCommands, ['npm test*', 'pico test*'])
+  assert.deepEqual(merged.projects, project.projects)
+  assert.deepEqual(merged.roles.dev, {
+    model: 'haiku',
+    capabilities: ['commit'],
+    permissionSets: ['gh-read', 'sitl'],
+    env: { A: '1', B: '2' },
+    envSets: [],
+    allow: ['Bash(make*)'],
+  })
+})
+
+test('team.json works on its own, without a project file', () => {
+  const alone = mergeConfig(JSON.parse(fs.readFileSync(path.join(repoRoot, 'team.json'), 'utf8')))
+  assert.deepEqual(alone.projects, [])
+  for (const role of Object.keys(alone.roles)) assert.ok(buildSettings(role, root, alone).permissions.allow.includes('Bash(gh pr view*)'), role)
+})
+
+test('${TEAM_ROOT} expands to the team root in rules and env', () => {
+  const rooted = {
+    ...config,
+    env: {},
+    permissionSets: { tools: ['Bash(${TEAM_ROOT}/bin/tool *)'] },
+    roles: { x: { model: 'haiku', permissionSets: ['tools'], allow: ['Edit(/${TEAM_ROOT}/shared/x/**)'], env: { TOOL: '${TEAM_ROOT}/bin/tool', PATH: '${TEAM_ROOT}/tools' } } },
+  }
+  const rules = buildSettings('x', root, rooted).permissions.allow
+  assert.ok(rules.includes('Bash(/srv/team/bin/tool *)'))
+  assert.ok(rules.includes('Edit(//srv/team/shared/x/**)'))
+  assert.ok(!rules.some((rule) => rule.includes('TEAM_ROOT')))
+  const env = agentEnv('x', root, rooted, { PATH: '/usr/bin' })
+  assert.equal(env.TOOL, '/srv/team/bin/tool')
+  assert.equal(env.TEAM_ROOT, root)
+  assert.equal(env.PATH, '/srv/team/bin:/srv/team/tools:/usr/bin')
+})
+
+test('env layers: shared env, then env sets in order, then the role env', () => {
+  const layeredEnv = {
+    ...config,
+    env: { PATH: '/shared/bin', LEVEL: 'shared', SHARED: '1' },
+    envSets: { a: { LEVEL: 'a', A: '1', PATH: '${TEAM_ROOT}/a' }, b: { LEVEL: 'b' } },
+    roles: { x: { model: 'haiku', envSets: ['a', 'b'], env: { OWN: '1' } }, y: { model: 'haiku', envSets: ['b'], env: { LEVEL: 'own' } } },
+  }
+  assert.deepEqual(roleEnv('x', root, layeredEnv), { PATH: '/srv/team/a:/shared/bin', LEVEL: 'b', SHARED: '1', A: '1', OWN: '1' })
+  assert.deepEqual(roleEnv('y', root, layeredEnv), { PATH: '/shared/bin', LEVEL: 'own', SHARED: '1' })
+})
+
+test('unknown env sets are rejected', () => {
+  const broken = { ...config, roles: { x: { model: 'haiku', envSets: ['nope'] } } }
+  assert.throws(() => roleEnv('x', root, broken), /Unknown env set "nope"/)
+})
+
+test('every env set is used by some role', () => {
+  const used = new Set(Object.values(config.roles).flatMap((definition) => definition.envSets ?? []))
+  for (const name of Object.keys(config.envSets ?? {})) assert.ok(used.has(name), name)
+})
+
+test('the project file merges env sets and the shared env', () => {
+  const merged = mergeConfig(
+    { env: { A: '1' }, envSets: { s: { X: '1' } }, roles: { r: { model: 'haiku', envSets: ['s'] } } },
+    { env: { B: '2' }, envSets: { s: { Y: '2' }, t: { Z: '3' } }, roles: { r: { envSets: ['t'] } } },
+  )
+  assert.deepEqual(merged.env, { A: '1', B: '2' })
+  assert.deepEqual(merged.envSets, { s: { X: '1', Y: '2' }, t: { Z: '3' } })
+  assert.deepEqual(merged.roles.r.envSets, ['s', 't'])
+})
+
+test('agents cannot edit either config file', () => {
+  for (const role of Object.keys(config.roles)) {
+    const { deny } = buildSettings(role, root, config).permissions
+    assert.ok(deny.includes('Edit(//srv/team/team.json)') && deny.includes('Edit(//srv/team/team-project.json)'), role)
+  }
 })
 
 test('projectDirName matches the Claude Code directory encoding', () => {

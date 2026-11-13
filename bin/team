@@ -6,7 +6,7 @@ import path from 'node:path'
 import readline from 'node:readline'
 import { fileURLToPath } from 'node:url'
 import {
-  agentEnv, bootMessage, buildClaudeArgs, channelFailed, channelPluginDirs, channelPluginSettings, formatEvent, formatJournalEntry, hasPriorSession, loadConfig, renderUnit, roleConfig,
+  agentEnv, bootMessage, buildClaudeArgs, channelFailed, channelPluginDirs, channelPluginSettings, formatEvent, formatJournalEntry, hasPriorSession, loadConfig, loadProjectConfig, PROJECT_FILE, renderUnit, roleConfig,
   roleDir, servicePath,
 } from '../lib/team.mjs'
 
@@ -114,8 +114,10 @@ function addProject(url, givenName) {
   if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(name)) throw new Error(`Invalid project name "${name}"`)
   if (config.projects.some((project) => project.name === name)) throw new Error(`Project "${name}" already exists`)
   execFileSync('git', ['clone', '--', url, path.join(root, 'repos', name)], { stdio: 'inherit' })
+  const projectConfig = loadProjectConfig(root)
+  projectConfig.projects = [...(projectConfig.projects ?? []), { name, url }]
+  fs.writeFileSync(path.join(root, PROJECT_FILE), `${JSON.stringify(projectConfig, null, 2)}\n`)
   config.projects.push({ name, url })
-  fs.writeFileSync(path.join(root, 'team.json'), `${JSON.stringify(config, null, 2)}\n`)
   fs.appendFileSync(path.join(root, 'shared', 'projects.md'), `\n## ${name}\n\n- Clone: repos/${name}\n- Remote: ${url}\n- Relationships: (not documented yet)\n`)
   console.log(`Added ${name}. Tell the lead on Discord that it is available.`)
 }

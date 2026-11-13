@@ -44,32 +44,6 @@
     "gh-workflow": [
       "Bash(gh workflow view*)",
       "Bash(gh workflow list*)"
-    ],
-    "e2e": [
-      "Bash(xvfb-run -a pnpm e2e*)",
-      "Bash(xvfb-run -a pnpm exec vitest*)"
-    ],
-    "sitl": [
-      "Bash(arducopter *)",
-      "Bash(/home/padcom/projects/padcom-team/bin/arducopter *)",
-      "Bash(pkill arducopter)",
-      "Bash(pgrep*)",
-      "Bash(ls -la /tmp/sitl-locks)",
-      "Bash(ls -la /tmp/sitl-locks/*)",
-      "Bash(ls /tmp/sitl-locks)",
-      "Bash(ls /tmp/sitl-locks/*)",
-      "Read(//tmp/sitl-locks/**)"
-    ],
-    "pico-desktop": [
-      "Bash(node /home/padcom/projects/padcom-team/workspaces/*/*/tooling/cli/bin/pico-desktop.mjs create *)",
-      "Bash(node tooling/cli/bin/pico-desktop.mjs create *)"
-    ],
-    "developer-workspace": [
-      "Edit(/home/padcom/projects/padcom-team/workspaces/developer/**)",
-      "Write(/home/padcom/projects/padcom-team/workspaces/developer/**/tooling/templates/vue-ts/.vscode/*)"
-    ],
-    "ardupilot-docs": [
-      "WebFetch(domain:ardupilot.org)"
     ]
   },
   "roles": {
@@ -81,10 +55,10 @@
         "merge"
       ],
       "permissionSets": [
-        "gh-read",
         "gh-issue",
-        "gh-pr",
         "gh-label",
+        "gh-pr",
+        "gh-read",
         "gh-run",
         "gh-workflow"
       ]
@@ -100,115 +74,70 @@
     },
     "developer": {
       "model": "sonnet",
-      "env": {
-        "PICO_DESKTOP_HOST": "/home/padcom/projects/padcom-team/shared/tools/pico-desktop/build/cef/runtime/cef-host/pico-desktop-host",
-        "SITL_BINARY": "/home/padcom/projects/padcom-team/bin/arducopter",
-        "SITL_FLIGHT": "1",
-        "LLVM_SYS_231_PREFIX": "/usr/lib/llvm-23",
-        "PATH": "/home/padcom/.local/share/pnpm"
-      },
       "capabilities": [
-        "worktree",
         "commit",
         "push",
-        "tests"
+        "tests",
+        "worktree"
       ],
       "permissionSets": [
-        "gh-read",
         "gh-pr",
         "gh-pr-create",
+        "gh-read",
         "gh-run",
-        "gh-workflow",
-        "e2e",
-        "sitl",
-        "pico-desktop",
-        "developer-workspace",
-        "ardupilot-docs"
+        "gh-workflow"
       ],
       "allow": [
-        "Bash(git clone /home/padcom/projects/padcom-team/repos/* /home/padcom/projects/padcom-team/workspaces/developer/*)",
-        "Bash(git clone --depth 1 * https://github.com/ArduPilot/ardupilot.git /home/padcom/projects/padcom-team/shared/tools/*)",
         "Bash(bash .github/*)",
-        "Bash(/home/padcom/projects/padcom-team/shared/tools/venv-ardupilot/bin/python *)",
-        "Bash(/home/padcom/projects/padcom-team/shared/tools/venv-ardupilot/bin/pip *)",
-        "Bash(git fetch *)",
+        "Bash(dpkg-query *)",
         "Bash(git checkout *)",
+        "Bash(git cherry-pick *)",
+        "Bash(git clone ${TEAM_ROOT}/repos/* ${TEAM_ROOT}/workspaces/developer/*)",
+        "Bash(git fetch *)",
+        "Bash(git rebase origin/*)",
         "Bash(git submodule *)",
         "Bash(mkdir *)",
-        "Bash(python3 *)",
-        "Bash(dpkg-query *)",
-        "Bash(./shared/ *)",
-        "Bash(./waf *)",
         "Bash(pnpm *)",
-        "Bash(git clone --depth 1 * https://github.com/ArduPilot/ardupilot.git ./shared/tools/*)",
-        "Bash(./shared/tools/venv-ardupilot/bin/python *)",
-        "Bash(./shared/tools/venv-ardupilot/bin/pip *)",
-        "Bash(env SITL_BINARY=*)",
-        "Bash(git cherry-pick *)",
-        "Bash(git rebase origin/*)",
-        "Bash(env NODE_ENV=development PICO_DESKTOP_HOST=*)",
-        "Bash(node relayout-move.mjs*)",
-        "Edit(/home/padcom/projects/padcom-team/shared/screenshots/**)",
-        "Write(/home/padcom/projects/padcom-team/shared/screenshots/**)"
+        "Bash(python3 *)"
       ]
     },
     "reviewer": {
       "model": "sonnet",
-      "env": {
-        "PATH": "/home/padcom/.local/share/pnpm",
-        "PICO_DESKTOP_HOST": "/home/padcom/projects/padcom-team/shared/tools/pico-desktop/build/cef/runtime/cef-host/pico-desktop-host",
-        "SITL_BINARY": "/home/padcom/projects/padcom-team/bin/arducopter",
-        "SITL_FLIGHT": "1"
-      },
       "capabilities": [
         "worktree"
       ],
       "permissionSets": [
-        "gh-read",
         "gh-issue",
         "gh-pr",
+        "gh-read",
         "gh-run",
-        "gh-workflow",
-        "e2e",
-        "ardupilot-docs"
+        "gh-workflow"
       ]
     },
     "qa": {
       "model": "haiku",
-      "env": {
-        "PATH": "/home/padcom/.local/share/pnpm",
-        "PICO_DESKTOP_HOST": "/home/padcom/projects/padcom-team/shared/tools/pico-desktop/build/cef/runtime/cef-host/pico-desktop-host",
-        "SITL_BINARY": "/home/padcom/projects/padcom-team/bin/arducopter",
-        "SITL_FLIGHT": "1"
-      },
       "capabilities": [
-        "worktree",
-        "tests"
+        "tests",
+        "worktree"
       ],
       "permissionSets": [
-        "gh-read",
         "gh-issue",
         "gh-pr",
+        "gh-read",
         "gh-run",
-        "gh-workflow",
-        "e2e",
-        "sitl",
-        "pico-desktop",
-        "developer-workspace",
-        "ardupilot-docs"
+        "gh-workflow"
       ],
       "allow": [
-        "Bash(git clone /home/padcom/projects/padcom-team/repos/* /home/padcom/projects/padcom-team/workspaces/qa/*)",
-        "Bash(git checkout*)",
-        "Bash(git switch*)",
-        "Bash(git pull*)",
-        "Bash(git stash*)",
-        "Bash(git cherry-pick*)",
-        "Bash(git rebase origin/*)",
         "Bash(bash .github/*)",
         "Bash(command -v *)",
-        "Bash(ls * /tmp/*)",
-        "Bash(SITL_BINARY=* pnpm --filter ./apps/frontend exec vitest run*)"
+        "Bash(git checkout*)",
+        "Bash(git cherry-pick*)",
+        "Bash(git clone ${TEAM_ROOT}/repos/* ${TEAM_ROOT}/workspaces/qa/*)",
+        "Bash(git pull*)",
+        "Bash(git rebase origin/*)",
+        "Bash(git stash*)",
+        "Bash(git switch*)",
+        "Bash(ls * /tmp/*)"
       ]
     }
   },
@@ -243,12 +172,6 @@
     "pnpm dlx*",
     "pnpm vitest*",
     "pnpm tsc*",
-    "pico test*",
-    "pico build*",
-    "pico run*",
-    "pico fmt*",
-    "pico lint*",
-    "pico --version",
     "cmake *",
     "ctest*",
     "make*",
@@ -258,38 +181,6 @@
     "go test*",
     "go build*",
     "python3 -m venv*",
-    "pytest*",
-    "cargo fmt*",
-    "scripts/test.sh*"
-  ],
-  "projects": [
-    {
-      "name": "pico-lang",
-      "url": "git@github.com:padcom/pico-lang"
-    },
-    {
-      "name": "pico-desktop",
-      "url": "git@github.com:padcom/pico-desktop"
-    },
-    {
-      "name": "pico-serialport",
-      "url": "git@github.com:padcom/pico-serialport"
-    },
-    {
-      "name": "pico-mavlink",
-      "url": "git@github.com:padcom/pico-mavlink"
-    },
-    {
-      "name": "drone-configurator",
-      "url": "git@github.com:padcom/drone-configurator"
-    },
-    {
-      "name": "drone-configurator-status",
-      "url": "git@github.com:padcom/drone-configurator-status.git"
-    },
-    {
-      "name": "vue-template",
-      "url": "git@github.com:padcom/vue-template.git"
-    }
+    "cargo fmt*"
   ]
 }
