@@ -1,0 +1,141 @@
+{
+  "env": {
+    "PATH": "/home/padcom/.local/share/pnpm"
+  },
+  "envSets": {
+    "sitl": {
+      "SITL_BINARY": "${TEAM_ROOT}/bin/arducopter",
+      "SITL_FLIGHT": "1"
+    },
+    "pico-desktop": {
+      "PICO_DESKTOP_HOST": "${TEAM_ROOT}/shared/tools/pico-desktop/build/cef/runtime/cef-host/pico-desktop-host"
+    },
+    "llvm": {
+      "LLVM_SYS_231_PREFIX": "/usr/lib/llvm-23"
+    }
+  },
+  "permissionSets": {
+    "e2e": [
+      "Bash(xvfb-run -a pnpm e2e*)",
+      "Bash(xvfb-run -a pnpm exec vitest*)"
+    ],
+    "sitl": [
+      "Bash(arducopter *)",
+      "Bash(${TEAM_ROOT}/bin/arducopter *)",
+      "Bash(pkill arducopter)",
+      "Bash(pgrep*)",
+      "Bash(ls -la /tmp/sitl-locks)",
+      "Bash(ls -la /tmp/sitl-locks/*)",
+      "Bash(ls /tmp/sitl-locks)",
+      "Bash(ls /tmp/sitl-locks/*)",
+      "Read(//tmp/sitl-locks/**)"
+    ],
+    "pico-desktop": [
+      "Bash(node ${TEAM_ROOT}/workspaces/*/*/tooling/cli/bin/pico-desktop.mjs create *)",
+      "Bash(node tooling/cli/bin/pico-desktop.mjs create *)"
+    ],
+    "developer-workspace": [
+      "Edit(/${TEAM_ROOT}/workspaces/developer/**)",
+      "Write(/${TEAM_ROOT}/workspaces/developer/**/tooling/templates/vue-ts/.vscode/*)"
+    ],
+    "ardupilot-docs": [
+      "WebFetch(domain:ardupilot.org)"
+    ]
+  },
+  "roles": {
+    "developer": {
+      "envSets": [
+        "sitl",
+        "pico-desktop",
+        "llvm"
+      ],
+      "permissionSets": [
+        "ardupilot-docs",
+        "developer-workspace",
+        "e2e",
+        "pico-desktop",
+        "sitl"
+      ],
+      "allow": [
+        "Bash(${TEAM_ROOT}/shared/tools/venv-ardupilot/bin/pip *)",
+        "Bash(${TEAM_ROOT}/shared/tools/venv-ardupilot/bin/python *)",
+        "Bash(./shared/ *)",
+        "Bash(./shared/tools/venv-ardupilot/bin/pip *)",
+        "Bash(./shared/tools/venv-ardupilot/bin/python *)",
+        "Bash(./waf *)",
+        "Bash(env NODE_ENV=development PICO_DESKTOP_HOST=*)",
+        "Bash(env SITL_BINARY=*)",
+        "Bash(git clone --depth 1 * https://github.com/ArduPilot/ardupilot.git ${TEAM_ROOT}/shared/tools/*)",
+        "Bash(git clone --depth 1 * https://github.com/ArduPilot/ardupilot.git ./shared/tools/*)",
+        "Bash(node relayout-move.mjs*)",
+        "Edit(/${TEAM_ROOT}/shared/screenshots/**)",
+        "Write(/${TEAM_ROOT}/shared/screenshots/**)"
+      ]
+    },
+    "reviewer": {
+      "envSets": [
+        "sitl",
+        "pico-desktop"
+      ],
+      "permissionSets": [
+        "ardupilot-docs",
+        "e2e"
+      ]
+    },
+    "qa": {
+      "envSets": [
+        "sitl",
+        "pico-desktop"
+      ],
+      "permissionSets": [
+        "ardupilot-docs",
+        "developer-workspace",
+        "e2e",
+        "pico-desktop",
+        "sitl"
+      ],
+      "allow": [
+        "Bash(SITL_BINARY=* pnpm --filter ./apps/frontend exec vitest run*)"
+      ]
+    }
+  },
+  "testCommands": [
+    "pico test*",
+    "pico build*",
+    "pico run*",
+    "pico fmt*",
+    "pico lint*",
+    "pico --version",
+    "scripts/test.sh*"
+  ],
+  "projects": [
+    {
+      "name": "pico-lang",
+      "url": "git@github.com:padcom/pico-lang"
+    },
+    {
+      "name": "pico-desktop",
+      "url": "git@github.com:padcom/pico-desktop"
+    },
+    {
+      "name": "pico-serialport",
+      "url": "git@github.com:padcom/pico-serialport"
+    },
+    {
+      "name": "pico-mavlink",
+      "url": "git@github.com:padcom/pico-mavlink"
+    },
+    {
+      "name": "drone-configurator",
+      "url": "git@github.com:padcom/drone-configurator"
+    },
+    {
+      "name": "drone-configurator-status",
+      "url": "git@github.com:padcom/drone-configurator-status.git"
+    },
+    {
+      "name": "vue-template",
+      "url": "git@github.com:padcom/vue-template.git"
+    }
+  ]
+}

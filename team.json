@@ -2,6 +2,51 @@
   "serviceName": "padcom-team",
   "license": "MIT",
   "channel": "plugin:discord@claude-plugins-official",
+  "allow": [
+    "Bash(grep*)",
+    "Bash(head*)",
+    "Bash(tail*)",
+    "Bash(git ls-remote*)"
+  ],
+  "permissionSets": {
+    "gh-read": [
+      "Bash(gh pr view*)",
+      "Bash(gh pr list*)",
+      "Bash(gh pr diff*)",
+      "Bash(gh pr checks*)",
+      "Bash(gh issue view*)",
+      "Bash(gh issue list*)",
+      "Bash(gh repo view*)"
+    ],
+    "gh-pr-create": [
+      "Bash(gh pr create*)"
+    ],
+    "gh-issue": [
+      "Bash(gh issue create*)",
+      "Bash(gh issue comment*)",
+      "Bash(gh issue close*)",
+      "Bash(gh issue reopen*)",
+      "Bash(gh issue edit*)"
+    ],
+    "gh-pr": [
+      "Bash(gh pr comment*)",
+      "Bash(gh pr close*)"
+    ],
+    "gh-label": [
+      "Bash(gh label create*)"
+    ],
+    "gh-run": [
+      "Bash(gh run view*)",
+      "Bash(gh run list*)",
+      "Bash(gh run watch*)",
+      "Bash(gh run rerun*)",
+      "Bash(gh run cancel*)"
+    ],
+    "gh-workflow": [
+      "Bash(gh workflow view*)",
+      "Bash(gh workflow list*)"
+    ]
+  },
   "roles": {
     "lead": {
       "model": "sonnet",
@@ -9,108 +54,91 @@
       "capabilities": [
         "editShared",
         "merge"
+      ],
+      "permissionSets": [
+        "gh-issue",
+        "gh-label",
+        "gh-pr",
+        "gh-read",
+        "gh-run",
+        "gh-workflow"
       ]
     },
     "architect": {
       "model": "sonnet",
       "capabilities": [
         "editShared"
+      ],
+      "permissionSets": [
+        "gh-read"
       ]
     },
     "developer": {
       "model": "sonnet",
       "capabilities": [
-        "worktree",
         "commit",
         "push",
-        "tests"
+        "tests",
+        "worktree"
+      ],
+      "permissionSets": [
+        "gh-pr",
+        "gh-pr-create",
+        "gh-read",
+        "gh-run",
+        "gh-workflow"
       ],
       "allow": [
-        "Bash(git clone /home/padcom/projects/padcom-team/repos/* /home/padcom/projects/padcom-team/workspaces/developer/*)",
-        "Bash(git clone --depth 1 * https://github.com/ArduPilot/ardupilot.git /home/padcom/projects/padcom-team/shared/tools/*)",
         "Bash(bash .github/*)",
-        "Bash(/home/padcom/projects/padcom-team/shared/tools/venv-ardupilot/bin/python *)",
-        "Bash(/home/padcom/projects/padcom-team/shared/tools/venv-ardupilot/bin/pip *)",
-
-        "Bash(git fetch *)",
-        "Bash(git checkout *)",
-        "Bash(git submodule *)",
-        "Bash(gh pr create*)",
-        "Bash(gh run view*)",
-        "Bash(gh run list*)",
-        "Bash(gh run watch*)",
-        "Bash(gh workflow view*)",
-        "Bash(gh workflow list*)",
-        "Bash(git ls-remote*)",
-        "Bash(mkdir *)",
-        "Bash(python3 *)",
         "Bash(dpkg-query *)",
-        "Bash(./shared/ *)",
-        "Bash(./waf *)",
+        "Bash(git checkout *)",
+        "Bash(git cherry-pick *)",
+        "Bash(git clone ${TEAM_ROOT}/repos/* ${TEAM_ROOT}/workspaces/developer/*)",
+        "Bash(git fetch *)",
+        "Bash(git rebase origin/*)",
+        "Bash(git submodule *)",
+        "Bash(mkdir *)",
         "Bash(pnpm *)",
-
-        "Bash(git clone --depth 1 * https://github.com/ArduPilot/ardupilot.git ./shared/tools/*)",
-        "Bash(./shared/tools/venv-ardupilot/bin/python *)",
-        "Bash(./shared/tools/venv-ardupilot/bin/pip *)",
-        "Bash(env SITL_BINARY=*)",
-
-        "Bash(ls -la /tmp/sitl-locks)",
-        "Bash(ls -la /tmp/sitl-locks/*)",
-        "Bash(ls /tmp/sitl-locks)",
-        "Bash(ls /tmp/sitl-locks/*)",
-        "Read(//tmp/sitl-locks/**)"
+        "Bash(python3 *)"
       ]
     },
     "reviewer": {
       "model": "sonnet",
       "capabilities": [
-        "worktree",
-        "comment"
+        "worktree"
       ],
-      "allow": [
-        "Bash(gh run view*)",
-        "Bash(gh run list*)",
-        "Bash(gh run watch*)",
-        "Bash(gh workflow view*)",
-        "Bash(gh workflow list*)",
-        "Bash(git ls-remote*)"
+      "permissionSets": [
+        "gh-issue",
+        "gh-pr",
+        "gh-read",
+        "gh-run",
+        "gh-workflow"
       ]
     },
     "qa": {
       "model": "haiku",
       "capabilities": [
-        "worktree",
         "tests",
-        "comment"
+        "worktree"
       ],
-      "env": {
-        "SITL_BINARY": "/home/padcom/projects/padcom-team/shared/tools/ardupilot/build/sitl/bin/arducopter"
-      },
+      "permissionSets": [
+        "gh-issue",
+        "gh-pr",
+        "gh-read",
+        "gh-run",
+        "gh-workflow"
+      ],
       "allow": [
-        "Bash(git clone /home/padcom/projects/padcom-team/repos/* /home/padcom/projects/padcom-team/workspaces/qa/*)",
-        "Bash(git checkout*)",
-        "Bash(git switch*)",
-        "Bash(git pull*)",
-        "Bash(git stash*)",
-        "Bash(git cherry-pick*)",
-        "Bash(git rebase origin/*)",
         "Bash(bash .github/*)",
-
         "Bash(command -v *)",
-        "Bash(ls * /tmp/*)",
-        "Bash(pgrep*)",
-
-        "Bash(gh run view*)",
-        "Bash(gh run list*)",
-        "Bash(gh run watch*)",
-        "Bash(gh workflow view*)",
-        "Bash(gh workflow list*)",
-
-        "Bash(ls -la /tmp/sitl-locks)",
-        "Bash(ls -la /tmp/sitl-locks/*)",
-        "Bash(ls /tmp/sitl-locks)",
-        "Bash(ls /tmp/sitl-locks/*)",
-        "Read(//tmp/sitl-locks/**)"
+        "Bash(git checkout*)",
+        "Bash(git cherry-pick*)",
+        "Bash(git clone ${TEAM_ROOT}/repos/* ${TEAM_ROOT}/workspaces/qa/*)",
+        "Bash(git pull*)",
+        "Bash(git rebase origin/*)",
+        "Bash(git stash*)",
+        "Bash(git switch*)",
+        "Bash(ls * /tmp/*)"
       ]
     }
   },
@@ -123,6 +151,11 @@
     "npm run build*",
     "npx vitest*",
     "npx tsc*",
+    "node --test*",
+    "node scripts/*",
+    "node --version",
+    "npm run*",
+    "npx --no-install*",
     "pytest*",
     "python3 -m pytest*",
     "pnpm install*",
@@ -140,12 +173,6 @@
     "pnpm dlx*",
     "pnpm vitest*",
     "pnpm tsc*",
-    "pico test*",
-    "pico build*",
-    "pico run*",
-    "pico fmt*",
-    "pico lint*",
-    "pico --version",
     "cmake *",
     "ctest*",
     "make*",
@@ -155,28 +182,6 @@
     "go test*",
     "go build*",
     "python3 -m venv*",
-    "pytest*"
-  ],
-  "projects": [
-    {
-      "name": "pico-lang",
-      "url": "git@github.com:padcom/pico-lang"
-    },
-    {
-      "name": "pico-desktop",
-      "url": "git@github.com:padcom/pico-desktop"
-    },
-    {
-      "name": "pico-serialport",
-      "url": "git@github.com:padcom/pico-serialport"
-    },
-    {
-      "name": "pico-mavlink",
-      "url": "git@github.com:padcom/pico-mavlink"
-    },
-    {
-      "name": "drone-configurator",
-      "url": "git@github.com:padcom/drone-configurator"
-    }
+    "cargo fmt*"
   ]
 }

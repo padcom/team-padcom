@@ -22,7 +22,7 @@ const [url, sha, ...extra] = process.argv.slice(2)
 if (!url || !sha || extra.length) die('usage: merge-pr <pr-url> <full-verified-commit-sha>')
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
-if (!teamRepoOfPrUrl(url, loadConfig(root))) die(`not a PR of a project in team.json: ${url}`)
+if (!teamRepoOfPrUrl(url, loadConfig(root))) die(`not a PR of a team project: ${url}`)
 
 const blockers = mergeBlockers(JSON.parse(gh('pr', 'view', url, '--json', FIELDS)), sha)
 if (blockers.length) die(`refusing to merge ${url}:\n- ${blockers.join('\n- ')}`)

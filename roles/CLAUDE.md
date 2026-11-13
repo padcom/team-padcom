@@ -11,7 +11,8 @@ The team root is two directories above your working directory.
 - `shared/projects.md`: the projects and how they connect.
 - `shared/tasks.md`: the task board, owned by `lead`.
 - `shared/decisions/`: design decisions, owned by `architect`.
-- `team.json`: the project list. Read-only.
+- `team.json`: the team's default roles and permissions. Read-only.
+- `team-project.json`: the project list and project-specific permissions. Read-only.
 
 ## Communication
 
