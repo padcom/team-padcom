@@ -12,7 +12,7 @@
       "permissionSets": [
       ],
       "allow": [
-        "Bash(./shared/ *)",
+        "Bash(./shared/ *)"
       ]
     },
     "reviewer": {
