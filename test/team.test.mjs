@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { agentEnv, buildClaudeArgs, buildSettings, channelFailed, formatEvent, formatJournalEntry, loadConfig, mergeBlockers, mergeConfig, roleEnv, projectDirName, renderUnit, servicePath, teamRepoOfPrUrl } from '../lib/team.mjs'
+import { agentEnv, buildClaudeArgs, buildSettings, channelFailed, formatEvent, formatJournalEntry, loadConfig, mergeBlockers, mergeConfig, roleEnv, projectDirName, renderUnit, servicePath, teamRepoOfPrUrl, terminalMessage, terminalSocketPath } from '../lib/team.mjs'
 
 const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const config = loadConfig(repoRoot)
@@ -315,4 +315,15 @@ test('formatJournalEntry decodes byte-array messages and skips unusable entries'
   assert.equal(formatJournalEntry(journalEntry({ ...unit, MESSAGE: [104, 105] })), '[lead] 07:05:03 hi')
   assert.equal(formatJournalEntry(journalEntry({ ...unit, MESSAGE: null })), null)
   assert.equal(formatJournalEntry(journalEntry({ _SYSTEMD_USER_UNIT: 'init.scope', MESSAGE: 'x' })), null)
+})
+
+test('terminalSocketPath lives in the runtime dir, under the service name', () => {
+  assert.equal(terminalSocketPath('padcom-team', 'qa', { XDG_RUNTIME_DIR: '/run/user/1000' }), '/run/user/1000/padcom-team/qa.sock')
+})
+
+test('terminalMessage is a stream-json user turn marked as from the terminal', () => {
+  const message = JSON.parse(terminalMessage('status?'))
+  assert.equal(message.type, 'user')
+  assert.equal(message.message.role, 'user')
+  assert.match(message.message.content, /^\[terminal\] .*status\?$/)
 })

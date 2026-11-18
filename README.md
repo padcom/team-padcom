@@ -44,6 +44,7 @@ By default the services run while you are logged in. To keep them running after 
 | `team status` | Service state |
 | `team logs <role>` | Follow one agent's activity |
 | `team tail` | Follow all agents' activity, as `[role] HH:MM:SS message` |
+| `team terminal <role>` | Type messages straight into one agent's session while following its activity. Each line is one message |
 | `team restart [role]` | Restart one agent or all. Sessions resume their conversation |
 | `team stop [role]` | Stop one agent or all |
 | `team add-project <url> [name]` | Clone another project for the team |

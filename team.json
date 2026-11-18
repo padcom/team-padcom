@@ -17,6 +17,9 @@
       "Bash(gh issue list*)",
       "Bash(gh repo view*)"
     ],
+    "gh-release-download": [
+      "Bash(gh release download *)"
+    ],
     "gh-pr-create": [
       "Bash(gh pr create*)"
     ],
@@ -85,7 +88,8 @@
         "gh-pr-create",
         "gh-read",
         "gh-run",
-        "gh-workflow"
+        "gh-workflow",
+        "gh-release-download"
       ],
       "allow": [
         "Bash(bash .github/*)",
