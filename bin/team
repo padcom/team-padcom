@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
+import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import readline from 'node:readline'
 import { fileURLToPath } from 'node:url'
 import {
   agentEnv, bootMessage, buildClaudeArgs, channelFailed, channelPluginDirs, channelPluginSettings, formatEvent, formatJournalEntry, hasPriorSession, loadConfig, loadProjectConfig, PROJECT_FILE, renderUnit, roleConfig,
-  roleDir, servicePath,
+  roleDir, servicePath, terminalMessage, terminalSocketPath,
 } from '../lib/team.mjs'
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
@@ -55,8 +56,68 @@ function run(role) {
   })
   // Headless sessions start plugins on their first turn, and the channel is a plugin.
   if (definition.channel) child.stdin.write(`${bootMessage()}\n`)
+  const socket = listenForTerminal(role, (text) => child.stdin.write(`${terminalMessage(text)}\n`))
   for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => child.kill(signal))
-  child.on('exit', (code) => process.exit(code ?? 1))
+  child.on('exit', (code) => {
+    fs.rmSync(socket, { force: true })
+    process.exit(code ?? 1)
+  })
+}
+
+// Each line a `team terminal` writes to the socket becomes one user turn in the session.
+function listenForTerminal(role, deliver) {
+  const socket = terminalSocketPath(service, role)
+  fs.mkdirSync(path.dirname(socket), { recursive: true, mode: 0o700 })
+  fs.rmSync(socket, { force: true })
+  const server = net.createServer((connection) => {
+    readline.createInterface({ input: connection }).on('line', (line) => {
+      if (line.trim()) deliver(line.trim())
+    })
+    connection.on('error', () => {})
+  })
+  server.on('error', (error) => console.error(`Terminal socket unavailable: ${error.message}`))
+  server.listen(socket, () => fs.chmodSync(socket, 0o600))
+  server.unref()
+  return socket
+}
+
+// Type messages straight into one agent's session, and watch its activity in between.
+function terminal(role) {
+  if (!role) throw new Error('Usage: team terminal <role>')
+  roleConfig(config, role)
+  const socket = terminalSocketPath(service, role)
+  const connection = net.createConnection(socket)
+  connection.on('error', (error) => {
+    console.error(`Cannot reach ${role} at ${socket} (${error.code}). Is it running? Agents started before "team terminal" existed need a "team restart ${role}".`)
+    process.exit(1)
+  })
+  connection.on('connect', () => {
+    const log = spawn('journalctl', ['--user', '-u', instance(role), '-n', '20', '-f', '-o', 'cat'], { stdio: ['ignore', 'pipe', 'inherit'] })
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout, prompt: `${role}> ` })
+    // Print activity above the prompt without losing what is being typed.
+    readline.createInterface({ input: log.stdout }).on('line', (line) => {
+      readline.clearLine(process.stdout, 0)
+      readline.cursorTo(process.stdout, 0)
+      console.log(line)
+      rl.prompt(true)
+    })
+    console.log(`Talking to ${role}. Each line is sent as a message. Ctrl-D or Ctrl-C to leave.`)
+    rl.prompt()
+    rl.on('line', (line) => {
+      if (line.trim()) connection.write(`${line}\n`)
+      rl.prompt()
+    })
+    rl.on('close', () => {
+      log.kill()
+      connection.end()
+      console.log()
+      process.exit(0)
+    })
+  })
+  connection.on('close', () => {
+    console.error(`\n${role} closed the connection (it stopped or restarted).`)
+    process.exit(1)
+  })
 }
 
 function install() {
@@ -158,6 +219,7 @@ const usage = `Usage: team <command>
   status                       Show agent services
   logs <role>                  Follow one agent's activity
   tail                         Follow all agents' activity, each line prefixed with its role
+  terminal <role>              Send messages straight to one agent, and follow its activity
   run <role>                   Run an agent in the foreground (used by systemd)`
 
 const [command, ...args] = process.argv.slice(2)
@@ -174,6 +236,7 @@ const commands = {
   status: () => systemctl('list-units', `${service}@*`, '--all', '--no-pager'),
   logs: () => spawnSync('journalctl', ['--user', '-u', instance(args[0]), '-n', '50', '-f', '-o', 'cat'], { stdio: 'inherit' }),
   tail,
+  terminal: () => terminal(args[0]),
 }
 
 if (!commands[command]) {
