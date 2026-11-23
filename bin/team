@@ -136,6 +136,24 @@ function install() {
   console.log(`Installed. Enabled: ${roles.join(', ')}. Use "team start" to launch them.`)
 }
 
+// Removes the services only. Projects, sessions, shared/ and the Discord setup stay, so "team install" brings it all back.
+function uninstall() {
+  const dir = path.join(os.homedir(), '.config', 'systemd', 'user')
+  const wants = path.join(dir, 'default.target.wants')
+  // Also catch agents enabled earlier under roles since removed from team.json.
+  const enabled = fs.existsSync(wants)
+    ? fs.readdirSync(wants).filter((name) => name.startsWith(`${service}@`) && name.endsWith('.service'))
+    : []
+  const units = [...new Set([...roles.map(instance), ...enabled])]
+  systemctl('stop', `${service}@*`)
+  systemctl('disable', ...units)
+  for (const name of enabled) fs.rmSync(path.join(wants, name), { force: true })
+  fs.rmSync(path.join(dir, `${service}@.service`), { force: true })
+  systemctl('daemon-reload')
+  systemctl('reset-failed', `${service}@*`)
+  console.log(`Uninstalled the ${service} services. Your files are untouched; "team install" sets them up again.`)
+}
+
 function ask(question, { hidden = false } = {}) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true })
   if (hidden) {
@@ -215,6 +233,7 @@ const usage = `Usage: team <command>
   pair                         Open an interactive lead session to pair your Discord account
   add-project <git-url> [name] Clone a project for the team
   install                      Install and enable the systemd user services
+  uninstall                    Stop, disable and remove the systemd user services
   start|stop|restart [role]    Control all agents, or one
   status                       Show agent services
   logs <role>                  Follow one agent's activity
@@ -226,6 +245,7 @@ const [command, ...args] = process.argv.slice(2)
 const commands = {
   run: () => run(args[0]),
   install,
+  uninstall,
   'set-token': setToken,
   pair,
   'add-project': () => addProject(args[0], args[1]),

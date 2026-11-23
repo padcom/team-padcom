@@ -48,6 +48,7 @@ By default the services run while you are logged in. To keep them running after 
 | `team restart [role]` | Restart one agent or all. Sessions resume their conversation |
 | `team stop [role]` | Stop one agent or all |
 | `team add-project <url> [name]` | Clone another project for the team |
+| `team uninstall` | Stop, disable and remove all agent services. Files, sessions and the Discord setup stay, so `team install` restores the team |
 
 `shared/tasks.md` is the task board, `shared/projects.md` maps the projects, and `shared/decisions/` holds design plans.
 
