@@ -136,6 +136,14 @@
     {
       "name": "vue-template",
       "url": "git@github.com:padcom/vue-template.git"
+    },
+    {
+      "name": "pico-gamepad",
+      "url": "git@github.com:padcom/pico-gamepad.git"
+    },
+    {
+      "name": "sitl-transmitter",
+      "url": "git@github.com:padcom/sitl-transmitter.git"
     }
   ]
 }
